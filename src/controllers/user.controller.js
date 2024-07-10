@@ -13,14 +13,8 @@ const  registerUser  = asyncHandler(async(req,res) =>{
     // remove password and refresh token faild from repsonse
     // check for user creation 
     // return response 
+ 
 
-
-    const {fullname,email,password,username} = req.body
-    if (
-      [fullname,email,password,username].some((field)=>field?.trim()==="")
-    ) {
-      throw new ApiError(400,"All fields for required ")
-    }
 
 
  
