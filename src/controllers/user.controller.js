@@ -1,4 +1,7 @@
 import { asyncHandler } from "../utils/asynchandler.utils.js";
+import {ApiError} from "../utils/apiError.utils.js";
+import {User} from "../models/user.model.js";
+
 
 const  registerUser  = asyncHandler(async(req,res) =>{
   // get user details from frontend
@@ -11,32 +14,16 @@ const  registerUser  = asyncHandler(async(req,res) =>{
     // check for user creation 
     // return response 
 
-    // let fname = '';
 
     const {fullname,email,password,username} = req.body
-    // const array = ["John", "Jane", "Alice", "Bob"];
-    let elements = '';
-    
-    // Construct the string of elements
-    for (let index = 0; index < fullname.length; index++) {
-        elements += `${fullname[index]}${index < fullname.length - 1 ? '\n' : '\n'}`;
+    if (
+      [fullname,email,password,username].some((field)=>field?.trim()==="")
+    ) {
+      throw new ApiError(400,"All fields for required ")
     }
 
-    // Log the elements inside the template literal
-    console.log(`
-        "Fullname": ${elements}
-        `);
 
-    
-//     for (const item of fullname) {
-
-//         elements += `${array[index]}${index < array.length - 1 ? ', ' : ''}`;
-        
-        
-//     }
-//     console.log(`
-//         "Fullname"${"\n", item}
-//         `);
+ 
   
 })
 
