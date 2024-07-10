@@ -11,9 +11,12 @@ const  registerUser  = asyncHandler(async(req,res) =>{
     // upload then to cloudinary,avatar
     // create user object entry in db 
     // remove password and refresh token faild from repsonse
+    
     // check for user creation 
     // return response 
  
+
+
 
 
 
