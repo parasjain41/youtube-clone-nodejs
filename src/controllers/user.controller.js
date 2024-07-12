@@ -5,6 +5,15 @@ import { uploaderOnCloudinary } from "../utils/cloudinary.ultils.js";
 import { ApiResponse } from "../utils/apiRespose.utils.js";
 
 const generateAccessAndRefresh = async (userId) => {
+   // get user details from frontend
+    // validation -not empty
+    // check if user already exists
+    // check for imges, check for avatar
+    // upload then to cloudinary,avatar
+    // create user object entry in db 
+    // remove password and refresh token faild from repsonse
+    // check for user creation 
+    // return response 
   try {
     const user = await User.findById(userId);
     const accessToken = user.generateAccessToken();
