@@ -1,43 +1,24 @@
 // require('dotenv').config({path:'./env'})
 
-
 import dotenv from "dotenv";
 import connectDB from "./db/index.db.js";
 import { app } from "./app.js";
 
 dotenv.config({
-    path:'./.env'
-})
-
+  path: "./.env",
+});
 
 connectDB()
-.then(()=>{
-    app.listen(process.env.PORT || 3000 ,()=>{
-        console.log(`Server is runing at Port : http://localhost:${process.env.PORT}/`);
-    })
-})
-.catch((Error)=>{
-    console.log("MongoDB connaction failed !!! ",Error);
-})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  .then(() => {
+    app.listen(process.env.PORT || 3000, () => {
+      console.log(
+        `Server is runing at Port : http://localhost:${process.env.PORT}/`
+      );
+    });
+  })
+  .catch((Error) => {
+    console.log("MongoDB connaction failed !!! ", Error);
+  });
 
 // import express from "express";
 
@@ -56,10 +37,9 @@ connectDB()
 //                 ${process.env.PORT}`);
 //         })
 
-        
 //     } catch (error) {
 //         console.error("Error",error)
 //         throw error
-        
+
 //     }
 // }) ()
