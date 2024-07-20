@@ -4,7 +4,7 @@ import { User } from "../models/user.model.js";
 import { uploaderOnCloudinary } from "../utils/cloudinary.ultils.js";
 import { ApiResponse } from "../utils/apiRespose.utils.js";
 import jwt from "jsonwebtoken";
-import { set } from "mongoose";
+import mongoose, { set } from "mongoose";
 
 const generateAccessAndRefresh = async (userId) => {
    // get user details from frontend
@@ -18,8 +18,8 @@ const generateAccessAndRefresh = async (userId) => {
     // return response 
   try {
     const user = await User.findById(userId);
-    const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
 
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
@@ -114,7 +114,16 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logOutUser = asyncHandler(async (req, res) => {
-  await User.findByIdAndUpdate(req.user._id, { refreshToken: undefined }, { new: true });
+  await User.findByIdAndUpdate(
+    req.user._id, 
+    { 
+      $unset:{
+        refreshToken:1,
+      }
+    }, 
+    {
+      new: true
+    });
 
   const options = {
     httpOnly: true,
@@ -128,52 +137,98 @@ const logOutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out"));
 });
 
-const refreshAccessToken =  asyncHandler(async(req,res)=>{
-  const incomeingRefreshToken=  req.cookie.refreshToken || req.body.refreshToken
+// const refreshAccessToken =  asyncHandler(async(req,res)=>{
+//   const incomeingRefreshToken=  req.cookie.refreshToken || req.body.refreshToken
 
-  if (!incomeingRefreshToken) {
-    throw new ApiError(401,"unauthorized request")
-  }
-  try {
-    const decoded = jwt.verify(
-      incomeingRefreshToken,
-      process.env.ACCESS_TOKEN_SECRET
-    )
-    const user= await User.findById(decoded?._id)
-    if (!user) {
-      throw new ApiError(401,"invalid refresh Token")
-    }
+//   if (!incomeingRefreshToken) {
+//     throw new ApiError(401,"unauthorized request")
+//   }
+//   try {
+//     const decoded = jwt.verify(
+//       incomeingRefreshToken,
+//       process.env.ACCESS_TOKEN_SECRET
+//     )
+//     const user= await User.findById(decoded?._id)
+//     if (!user) {
+//       throw new ApiError(401,"invalid refresh Token")
+//     }
   
-    if ( incomeingRefreshToken  !== user?.refreshToken)  {
-      throw new ApiError(401, "refersh token is expriy or invaild")
+//     if ( incomeingRefreshToken  !== user?.refreshToken)  {
+//       throw new ApiError(401, "refersh token is expriy or invaild")
       
-    }
-    const option = {
-      httpOnly:true,
-      secure:true,
-    }
+//     }
+//     const option = {
+//       httpOnly:true,
+//       secure:true,
+//     }
   
-    const{accessToken,newrefreshToken}  =await generateAccessAndRefresh(user._id)
+//     const{accessToken,newrefreshToken}  =await generateAccessAndRefresh(user._id)
   
-    return res
-    .status(200)
-    .cookie("accessToken",accessToken,option)
-    .cookie("refreshToken",refreshToken,option)
-    .json(
-      new ApiResponse(
-        200,
-        {accessToken,refreshToken:newrefreshToken},
-        "Access Token Refreshed")
-    )
+//     return res
+//     .status(200)
+//     .cookie("accessToken",accessToken,option)
+//     .cookie("refreshToken",refreshToken,option)
+//     .json(
+//       new ApiResponse(
+//         200,
+//         {accessToken,refreshToken:newrefreshToken},
+//         "Access Token Refreshed")
+//     )
   
-  } catch (error) {
-    throw new ApiError(401,error?.message || "Auth token error")
+//   } catch (error) {
+//     throw new ApiError(401,error?.message || "Auth token error")
     
+//   }
+// });
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+  if (!incomingRefreshToken) {
+      throw new ApiError(401, "unauthorized request")
   }
-   
+ 
+  try {
+      const decodedToken = jwt.verify(
+          incomingRefreshToken,
+          process.env.REFRESH_TOKEN_SECRET
+      )
+  
+      const user = await User.findById(decodedToken?._id)
+  
+      if (!user) {
+          throw new ApiError(401, "Invalid refresh token")
+      }
+  
+      if (incomingRefreshToken !== user?.refreshToken) {
+          throw new ApiError(401, "Refresh token is expired or used")
+          
+      }
+  
+      const options = {
+          httpOnly: true,
+          secure: true
+      }
+  
+      const {accessToken, newRefreshToken} = await generateAccessAndRefresh(user._id)
+  
+      return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newRefreshToken, options)
+      .json(
+          new ApiResponse(
+              200, 
+              {accessToken, refreshToken: newRefreshToken},
+              "Access token refreshed"
+          )
+      )
+  } catch (error) {
+      throw new ApiError(401, error?.message || "Invalid refresh token")
+  }
 
+})
 
-});
 
 const changerCurrentPassword =asyncHandler(async(req,res)=>{
   const{oldPassword, NewPassword} =req.body
@@ -189,14 +244,18 @@ const changerCurrentPassword =asyncHandler(async(req,res)=>{
   return res
   .status(200)
   .json(new ApiResponse(200,{},"Password is Save "))
-
-
 })
+
 const getCurrentUser = asyncHandler(async(req,res)=>{
+  
+  
   return  res
   .status(200 )
-  .json(200,req.user,"Current User Fatched Successfully ")
+  .json(new ApiResponse(200,req.user,"Current User Fatched Successfully "))
 })
+
+
+
 
 const  updateAccount  = asyncHandler(async(req,res)=>{
   const {fullName,email} = req.body
@@ -274,6 +333,137 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
     new ApiError(200, user," coverImage Is update")
   )
 })
+
+const getUserChannelProfile = asyncHandler(async(req,res) =>{
+  const {username}=req.params
+  if (!username?.trim()) {
+    throw new ApiError(400,"User Name is not dfund")
+    
+  }
+  const chennal  = await User.aggregate([
+    {
+      $match:{
+        username:username?.toLowerCase()
+      },
+    },
+    {
+      $lookup:{
+        from:"subscriptions",
+        localField:"_id",
+        foreignField:"chennel",
+        as:"subscriber",
+
+      }
+    },
+    {
+      $lookup:{
+        from:"chennals",
+        localField:"_id",
+        foreignField:"subscriptions",
+        as:"subscriberTo"
+      }
+    },
+    {
+      $addFields:{
+        subscriberCount:{
+          $size:"$subscriber",
+        },
+        chennalSubscriberToCount:{
+          $size:"$subscriberTo"
+        },
+        isSubscriber:{
+          $cond:{
+            if:{$in:[req.user?._id,"$subscriber.subscribe"]},
+            then: true,
+            else: false, 
+          }
+        }
+      }
+    },
+    {
+      $project:{
+        fullName:1,
+        username:1,
+        subscriberCount:1,
+        chennalSubscriberToCount:1,
+        chennalSubscriberToCount:1,
+        avatar:1,
+        coverImage:1,
+        email:1,
+        isSubscriber:1,
+      }
+    }
+  ])
+
+  if (!chennal?.length) {
+    throw new ApiError(400,"Chennal does not exists")
+  }
+  return res
+  .status(200)
+  .json(
+    new ApiResponse(200,chennal[0],"User Chennal faatched sccessfull")
+  )
+
+
+  
+})
+const  getWactchHistory =  asyncHandler(async(req,res)=>{
+  const user  = await User.aggregate([
+    {
+      $match:{
+        _id: new mongoose.Types.ObjectId(req.user._id)
+
+      }
+    },
+    {
+      $lookup:{
+        from:"Video",
+        localField:"watchHistory",
+        foreignField:"_id",
+        as: "watchHistory",
+        pipeline:[
+          {
+            $lookup:{
+              from:"User",
+              localField:"owner",
+              foreignField:"_id",
+              as: "owner",
+              pipeline:[
+                {
+                  $project:{
+                    fullName:1,
+                    username:1,
+                    avatar:1,
+
+                  }
+                }
+              ]
+            }
+          },
+          {
+            $addFields:{
+              owner:{
+                $first:"$owner"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ])
+
+  return  res
+  .status(200)
+  .json(
+    new ApiResponse(
+      200,
+      user[0].watchHistory,
+    "waccth history featched successfull")
+      )
+
+
+})
+
 export {
   registerUser,
   loginUser,
@@ -284,6 +474,7 @@ export {
   updateAccount,
   updateUserAvatar,
   updateCoverImage,
-  
+  getUserChannelProfile,
+  getWactchHistory,
   
 };
