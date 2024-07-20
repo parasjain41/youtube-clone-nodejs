@@ -71,10 +71,7 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variables file
-# freeuse-delivery-service/
-# healthy-habits-horny-rewards/
-# hard-bodied-ema-gives-gym-buddy-a-real-work-out/
-# don-t-judge-a-bang-by-its-cover/
+
 .env
 .env.test
 .env.production

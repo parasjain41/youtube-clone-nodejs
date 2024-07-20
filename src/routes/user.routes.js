@@ -46,8 +46,8 @@ router.route("/current-user").get(verifyJWT,getCurrentUser) // ok
 router.route("/update-account").patch(verifyJWT,updateAccount)
 router.route("/update-avatar").patch(verifyJWT,upload.single("avatar"),updateUserAvatar)
 router.route("/cover-imange").patch(verifyJWT,upload.single("coverImange",updateCoverImage))
-router.route("/c/:username").get(verifyJWT,getUserChannelProfile)
-router.route("/history").get(verifyJWT,getWactchHistory)
+router.route("/c/:username").get(verifyJWT,getUserChannelProfile) // ok
+router.route("/history").get(verifyJWT,getWactchHistory) //ok 
 
 
 export default router;
